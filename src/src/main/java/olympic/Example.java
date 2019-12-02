@@ -28,8 +28,6 @@ public class Example {
         deleteFromTable();
         selectFromTable();
         dropTable();
-
-
     }
 
     private static void deleteFromTable() {
