@@ -2,12 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2979a2d5-8cae-4b62-a8c5-f90cab93056a" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/.idea/src.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/olympic/data/Basic_n_Advanced.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/olympic/Example.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/olympic/Example.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/olympic/Solution.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/olympic/Solution.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/olympic/data/PostgreSQLErrorCodes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/olympic/data/PostgreSQLErrorCodes.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -88,6 +85,7 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\repositories\MMNHW\mmn-wet-2\src\src\main\java\olympic\data" />
       <recent name="C:\Users\Peleg\OneDrive - Technion\עבודה\ממן\236363_winter_18-19_hw2\src\test\java\technify" />
     </key>
   </component>
@@ -240,8 +238,16 @@
       <workItem from="1574772494795" duration="601000" />
       <workItem from="1574860213202" duration="601000" />
       <workItem from="1574946499701" duration="12392000" />
-      <workItem from="1575297294333" duration="14358000" />
+      <workItem from="1575297294333" duration="14433000" />
+      <workItem from="1575455536850" duration="6966000" />
     </task>
+    <task id="LOCAL‎00001" summary="More Functions.">
+      <created>1575311976640</created>
+      <option name="number" value="LOCAL‎00001" />
+      <option name="presentableId" value="LOCAL‎00001" />
+      <updated>1575311976640</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -260,6 +266,10 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="More Functions." />
+    <option name="LAST_COMMIT_MESSAGE" value="More Functions." />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
@@ -270,7 +280,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/olympic/Solution.java</url>
-          <line>299</line>
+          <line>302</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
       </breakpoints>
