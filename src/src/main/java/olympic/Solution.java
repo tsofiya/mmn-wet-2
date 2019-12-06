@@ -84,35 +84,33 @@ public class Solution {
         }
 
         try {
-            pstmt = connection.prepareStatement("CREATE TABLE Winning\n" +
-                    "(\n" +
-                    "    Athlete_ID integer,\n" +
+            pstmt = connection.prepareStatement("CREATE TABLE Winning\n"+
+                    "    (Athlete_ID integer,\n" +
                     "    Sport_ID integer,\n" +
                     "    Place integer ,\n"+
+                            "CHECK (Place>=1 AND Place<=3),\n"+
                     " FOREIGN KEY (Athlete_ID) references Athlete ON DELETE CASCADE,\n"+
                     " FOREIGN KEY (Sport_ID) references Sport ON DELETE CASCADE,\n"+
-                    " PRIMARY KEY (Athlete_ID, Sport_ID),\n" +
-                    "CHECK (Place BETWEEN 1 AND 3)"+
-
-                    ")");
+                    " PRIMARY KEY (Athlete_ID, Sport_ID))"
+                    );
             pstmt.execute();
         } catch (SQLException e) {
-            //e.printStackTrace()();
+            //e.printStackTrace();
         }
 
         try {
 
             pstmt = connection.prepareStatement("CREATE TABLE Friendship\n" +
-                    "(\n" +
+                    "("+
                     "    Athlete_ID1 integer,\n" +
                     "    Athlete_ID2 integer,\n" +
+                    "CHECK (Athlete_ID1 <> Athlete_ID2),\n" +
                     " FOREIGN KEY (Athlete_ID1) references Athlete(Athlete_ID) ON DELETE CASCADE,\n"+
                     " FOREIGN KEY (Athlete_ID2) references Athlete(Athlete_ID) ON DELETE CASCADE,\n"+
                     " PRIMARY KEY (Athlete_ID1, Athlete_ID2)\n" +
                     ")");
             pstmt.execute();
         } catch (SQLException e) {
-            e.printStackTrace();
         }
         finally {
             try {
@@ -233,10 +231,10 @@ public class Solution {
             ResultSet results = pstmt.executeQuery();
             a= new Athlete();
             if (results.next()){
-            a.setId(results.getInt(1));
-            a.setCountry(results.getString(2));
-            a.setName(results.getString(3));
-            a.setIsActive(results.getBoolean(4));
+                a.setId(results.getInt(1));
+                a.setCountry(results.getString(3));
+                a.setName(results.getString(2));
+                a.setIsActive(results.getBoolean(4));
             results.close();
             } else
                 return Athlete.badAthlete();
@@ -264,7 +262,7 @@ public class Solution {
     public static ReturnValue deleteAthlete(Athlete athlete) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
-        ReturnValue returnValue=null;
+        ReturnValue returnValue=OK;
 //        boolean active= athlete.getIsActive();
 //        if (active) {
 //            try {
@@ -315,9 +313,7 @@ public class Solution {
             }
         }
 
-        if (returnValue!=null)
             return returnValue;
-        return OK;
     }
 
     public static ReturnValue addSport(Sport sport) {
@@ -325,7 +321,7 @@ public class Solution {
         PreparedStatement pstmt = null;
         ReturnValue r=null;
         try {
-            pstmt = connection.prepareStatement("INSERT INTO Athlete" +
+            pstmt = connection.prepareStatement("INSERT INTO Sport" +
                     " VALUES (?, ?, ?, ?)");
             pstmt.setInt(1,sport.getId());
             pstmt.setString(2, sport.getName());
@@ -361,11 +357,13 @@ public class Solution {
             pstmt.setInt(1,sportId);
             ResultSet results = pstmt.executeQuery();
             sport= new Sport();
-            results.next();
-            sport.setId(results.getInt(1));
-            sport.setName(results.getString(2));
-            sport.setCity(results.getString(3));
-            sport.setAthletesCount(results.getInt(4));
+
+            if (results.next()) {
+                sport.setId(results.getInt(1));
+                sport.setName(results.getString(2));
+                sport.setCity(results.getString(3));
+                sport.setAthletesCount(results.getInt(4));
+            }
             results.close();
 
         } catch (SQLException e) {
@@ -425,30 +423,30 @@ public class Solution {
             //Insert to AthleteStatus
             pstmt = connection.prepareStatement("INSERT INTO AthleteStatus" +
                     " VALUES (?, ?, ?)");
-            pstmt.setInt(1,sportId);
-            pstmt.setInt(2, athleteId);
+            pstmt.setInt(1,athleteId);
+            pstmt.setInt(2, sportId);
             pstmt.setInt(3, 0);
             pstmt.execute();
 
             //Update the paycheck
-            pstmt = connection.prepareStatement("UPDATE AthleteStatus" +
-                    "SET payment=100" +
-                    "WHERE Athlete_ID=" +
+            pstmt = connection.prepareStatement("UPDATE AthleteStatus " +
+                    "SET payment=100 " +
+                    "WHERE Athlete_ID= " +
                     "(SELECT Athlete_ID " +
                     "FROM Athlete " +
-                    "WHRER Athlete_id=? AND Sport_ID=? isactive=true)");
+                    "WHERE Athlete_id=? AND Sport_ID=? AND active=false )");
             pstmt.setInt(1,athleteId);
             pstmt.setInt(2,sportId);
             pstmt.execute();
 
             //Upadate the athlete counter if necessary
-            pstmt = connection.prepareStatement("UPDATE Sport" +
-                    "SET AthletesCounter=AthletesCounter+1" +
-                    "WHERE Sport_ID=?" +
-                    "AND WHERE Athlete_ID=" +
+            pstmt = connection.prepareStatement("UPDATE Sport " +
+                    "SET Athletes_Counter=Athletes_Counter+1 " +
+                    "WHERE Sport_ID=? " +
+                    "AND EXISTS " +
                     "(SELECT Athlete_ID " +
                     "FROM Athlete " +
-                    "WHRER Athlete_id=? and isactive=true)");
+                    "WHERE Athlete_id=? and active=true)");
             pstmt.setInt(1,sportId);
             pstmt.setInt(2,athleteId);
             pstmt.execute();
@@ -480,22 +478,26 @@ public class Solution {
         PreparedStatement pstmt = null;
         ReturnValue returnValue=null;
         try {
-            pstmt = connection.prepareStatement("UPDATE Sport" +
-                    "SET AthletesCounter=AthletesCounter-1" +
-                    "WHERE Sport_ID=?" +
-                    "AND WHERE Athlete_ID=" +
+            pstmt = connection.prepareStatement("UPDATE Sport " +
+                    "SET Athletes_Counter=Athletes_Counter-1 " +
+                    "WHERE Sport_ID=? " +
+                    "AND EXISTS " +
                     "(SELECT Athlete_ID " +
                     "FROM Athlete " +
-                    "WHRER Athlete_id=? and isactive=true)");
+                    "WHERE Athlete_id=? and Active=true)");
             pstmt.setInt(1,sportId);
             pstmt.setInt(2,athleteId);
             pstmt.execute();
 
             pstmt = connection.prepareStatement("DELETE FROM AthleteStatus" +
-                    "WHERE Sport_ID= ?, Athlete_ID= ?");
-            pstmt.setInt(1,sportId);
-            pstmt.setInt(2,athleteId);
-            pstmt.execute();
+                    " WHERE Athlete_ID= ? AND Sport_ID= ?");
+            pstmt.setInt(1,athleteId);
+            pstmt.setInt(2,sportId);
+
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows==0)
+                returnValue= NOT_EXISTS;
+
 
         } catch (SQLException e) {
             returnValue= translateException(e);
@@ -521,24 +523,64 @@ public class Solution {
     public static ReturnValue confirmStanding(Integer sportId, Integer athleteId, Integer place) {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
+        ResultSet results=null;
         ReturnValue returnValue= null;
         try {
-            pstmt = connection.prepareStatement("SELECT * FROM Winning " +
-                    "WHERE Sport_ID = (?) AND Athlete_ID=? AND Place=?");
-            pstmt.setInt(1,sportId);
-            pstmt.setInt(2,athleteId);
-            pstmt.setInt(3,place);
-            ResultSet results = pstmt.executeQuery();
-            if (!results.next())
+            pstmt = connection.prepareStatement("SELECT Athlete_ID " +
+                    "FROM Athlete " +
+                    "WHERE Athlete_ID=? AND Active=true");
+            pstmt.setInt(1,athleteId);
+            pstmt.execute();
+
+            results = pstmt.executeQuery();
+
+            if (results.next()) {
+                results.close();
+
+                pstmt = connection.prepareStatement("SELECT Sport_ID " +
+                        "FROM AthleteStatus " +
+                        "WHERE Athlete_ID=? AND Sport_ID=?");
+                pstmt.setInt(1, athleteId);
+                pstmt.setInt(2, sportId);
+                pstmt.execute();
+
+                results = pstmt.executeQuery();
+                if (results.next()){
+                    pstmt = connection.prepareStatement("INSERT INTO Winning VALUES (?,?,?)");
+                    pstmt.setInt(1,athleteId);
+                    pstmt.setInt(2,sportId);
+                    pstmt.setInt(3,place);
+                    pstmt.execute();
+                }
+                else
+                    returnValue= NOT_EXISTS;
+            }else
                 returnValue= NOT_EXISTS;
 
-            results.close();
+//            pstmt = connection.prepareStatement("insert into Winning VALUES (?,?,?)\n " +
+//                    "SELECT Athlete_ID, Sport_ID " +
+//                    "where " +
+//                    "exists(SELECT Athlete_ID, Sport_ID FROM AthleteStatus " +
+//                    "WHERE Athlete_ID=? AND Sport_ID=?) " +
+//                    "AND exists (SELECT Athlete_ID FROM Athlete " +
+//                    "WHERE Athlete_ID=? AND Active=true) ");
+//            pstmt.setInt(1,athleteId);
+//            pstmt.setInt(2,sportId);
+//            pstmt.setInt(3,place);
+//            pstmt.setInt(4,athleteId);
+//            pstmt.setInt(5,sportId);
+//            pstmt.setInt(6,athleteId);
 
 
         } catch (SQLException e) {
             returnValue= translateException(e);
         }
         finally {
+            try {
+                results.close();
+            } catch (SQLException e) {
+            //e.printStackTrace()();
+        }
             try {
                 pstmt.close();
             } catch (SQLException e) {
@@ -562,8 +604,8 @@ public class Solution {
         PreparedStatement pstmt = null;
         ReturnValue returnValue= OK;
         try {
-            pstmt = connection.prepareStatement("DELETE FROM Winning" +
-                    "WHERE Sport_ID= ?, Athlete_ID= ?");
+            pstmt = connection.prepareStatement("DELETE FROM Winning " +
+                    "WHERE Sport_ID= ? and Athlete_ID= ?");
             pstmt.setInt(1,sportId);
             pstmt.setInt(2,athleteId);
             pstmt.execute();
@@ -591,16 +633,26 @@ public class Solution {
         PreparedStatement pstmt = null;
         ReturnValue returnValue= OK;
         try {
-            pstmt = connection.prepareStatement("IF NOT EXISTS" +
-                    "(SELECT Athlete_ID1 , Athlete_ID2 " +
-                    "FROM Friendship WHERE Athlete_ID1 = ?, Athlete_ID2 = ?)\n" +
-                    "INSERT INTO Friendship" +
-                    "VALUES(?,?)");
+            pstmt = connection.prepareStatement("SELECT Athlete_ID1 , Athlete_ID2 " +
+                                      "FROM Friendship WHERE (Athlete_ID1 = ? AND Athlete_ID2 = ? )" +
+                    "OR (Athlete_ID1 = ? AND Athlete_ID2=?)");
             pstmt.setInt(1,athleteId2);
             pstmt.setInt(2,athleteId1);
-            pstmt.setInt(3,athleteId1);
-            pstmt.setInt(4,athleteId2);
+            pstmt.setInt(3, athleteId1);
+            pstmt.setInt(4, athleteId2);
             pstmt.execute();
+
+            ResultSet resultSet= pstmt.executeQuery();
+            if (!resultSet.next()) {
+                pstmt = connection.prepareStatement("INSERT INTO Friendship " +
+                        "VALUES(?,?)");
+                pstmt.setInt(1, athleteId1);
+                pstmt.setInt(2, athleteId2);
+                pstmt.execute();
+            }else
+                returnValue= ALREADY_EXISTS;
+            resultSet.close();
+
         } catch (SQLException e) {
             returnValue= translateException(e);
         }
@@ -625,13 +677,15 @@ public class Solution {
         PreparedStatement pstmt = null;
         ReturnValue returnValue= OK;
         try {
-            pstmt = connection.prepareStatement("DELETE FROM Friendship" +
-                    "WHERE Athlete_ID1= ?, Athlete_ID2= ? OR Athlete_ID1= ?, Athlete_ID2= ?");
+            pstmt = connection.prepareStatement("DELETE FROM Friendship " +
+                    "WHERE (Athlete_ID1= ? AND Athlete_ID2= ?) OR (Athlete_ID1= ? AND Athlete_ID2= ?)");
             pstmt.setInt(1,athleteId2);
             pstmt.setInt(2,athleteId1);
             pstmt.setInt(3,athleteId1);
             pstmt.setInt(4,athleteId2);
-            pstmt.execute();
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows==0)
+                returnValue=NOT_EXISTS;
         } catch (SQLException e) {
             returnValue= translateException(e);
         }
@@ -656,13 +710,19 @@ public class Solution {
         PreparedStatement pstmt = null;
         ReturnValue returnValue= OK;
         try {
-            pstmt = connection.prepareStatement("UPDATE AthleteStatus" +
-                    "SET payment= ?" +
-                    "WHERE Athlete_ID1= ? Sport_ID=?");
+            pstmt = connection.prepareStatement("UPDATE AthleteStatus " +
+                    "SET payment= ? " +
+                    "WHERE Athlete_ID= ? AND Sport_ID=? " +
+                    "AND EXISTS (SELECT * FROM Athlete WHERE Athlete_ID=? AND ACTIVE=false) " +
+                    "AND EXISTS (SELECT * FROM Sport WHERE Sport_ID= ?)");
             pstmt.setInt(1,payment);
             pstmt.setInt(2,athleteId);
             pstmt.setInt(3,sportId);
-            pstmt.execute();
+            pstmt.setInt(4,athleteId);
+            pstmt.setInt(5,sportId);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows==0)
+                returnValue=NOT_EXISTS;
         } catch (SQLException e) {
             returnValue= translateException(e);
         }
@@ -687,31 +747,39 @@ public class Solution {
         PreparedStatement pstmt = null;
         boolean returnValue= false;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW FriendSport" +
-                    "AS SELECT Sport_ID FROM AthleteStatus" +
-                    "WHERE Athelete_ID IN" +
-                    "(SELECT Athelete_ID1 FROM Friendship WHERE Athelete_ID2=?)" +
-                    "OR (SELECT Athelete_ID2 FROM Friendship WHERE Athelete_ID1=?)");
-            pstmt.setInt(1, athleteId);
-            pstmt.setInt(2, athleteId);
+            pstmt = connection.prepareStatement("DROP VIEW IF EXISTS FriendSport");
+            pstmt.execute();
+            pstmt = connection.prepareStatement("DROP VIEW IF EXISTS otherSports");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT Sport_ID" +
-                    "FROM FriendSport" +
-                    "WHERE Sport_ID NOT IN (SELECT Sport_ID FROM AthleteStatus" +
-                    "WHERE Athlete_ID=?)");
-            pstmt.setInt(1,athleteId);
+            pstmt = connection.prepareStatement("CREATE VIEW FriendSport\n" +
+                    " AS SELECT Sport_ID FROM AthleteStatus\n" +
+                    " WHERE Athlete_ID in " +
+                    " ((SELECT Athlete_ID1 FROM Friendship WHERE Athlete_ID2="+athleteId +
+                    ") UNION (SELECT Athlete_ID2 FROM Friendship WHERE Athlete_ID1="+athleteId+" ))");
+            pstmt.execute();
+
+
+            pstmt= connection.prepareStatement("CREATE VIEW otherSports AS SELECT Sport_ID FROM AthleteStatus " +
+                    "WHERE Athlete_ID="+athleteId);
+            pstmt.execute();
+
+            pstmt = connection.prepareStatement("SELECT Sport_ID " +
+                    "FROM FriendSport " +
+                    "WHERE Sport_ID NOT IN(SELECT sport_ID FROM otherSports)");
+//            pstmt.setInt(1, athleteId);
             pstmt.execute();
 
             ResultSet results = pstmt.executeQuery();
-            returnValue=!results.next();
+            returnValue= !results.next();
             results.close();
 
             pstmt = connection.prepareStatement("DROP VIEW FriendSport");
             pstmt.execute();
 
-        } catch (SQLException e) {
 
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         finally {
             try {
@@ -733,18 +801,23 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         int returnValue= 0;
+
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW AthleteFrom" +
-                    "AS SELECT Athlete_ID FROM Athlete" +
-                    "WHERE Country=?");
-            pstmt.setString(1, country);
+
+
+            pstmt = connection.prepareStatement("DROP VIEW IF exists AthleteFrom");
+            pstmt.execute();
+            pstmt = connection.prepareStatement("CREATE VIEW AthleteFrom " +
+                    "AS SELECT Athlete_ID FROM Athlete " +
+                    "WHERE Country=\'"+country+"\'");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT COUNT (Athlete_ID) FROM Winning" +
-                    " WHERE Athlete_ID IN AthleteFrom ");
+            pstmt = connection.prepareStatement(" SELECT count (Athlete_ID) FROM Winning" +
+                    " WHERE Athlete_ID IN (Select athlete_id from AthleteFrom) ");
             pstmt.execute();
 
             ResultSet results = pstmt.executeQuery();
+            if (results.next())
             returnValue= results.getInt(1);
 
             pstmt = connection.prepareStatement("DROP VIEW AthleteFrom");
@@ -775,24 +848,29 @@ public class Solution {
         PreparedStatement pstmt = null;
         int returnValue= 0;
         try {
+            pstmt = connection.prepareStatement("DROP VIEW IF EXISTS Observer");
+            pstmt.execute();
+
             pstmt = connection.prepareStatement("CREATE VIEW Observer" +
-                    "AS SELECT Athlete_ID FROM Athlete" +
-                    "WHERE Active=FALSE");
+                    " AS SELECT Athlete_ID FROM Athlete" +
+                    " WHERE Active=FALSE");
             pstmt.execute();
 
             pstmt = connection.prepareStatement("SELECT SUM (payment) FROM AthleteStatus" +
-                    " WHERE Sport_ID= ? AND Athlete_ID IN Observer");
+                    " WHERE Sport_ID= ? AND Athlete_ID " +
+                    "IN (SELECT Athlete_ID FROM Observer)");
             pstmt.setInt(1, sportId);
             pstmt.execute();
 
             ResultSet results = pstmt.executeQuery();
-            returnValue= results.getInt(1);
+            if (results.next())
+                returnValue= results.getInt(1);
 
             pstmt = connection.prepareStatement("DROP VIEW Observer");
             pstmt.execute();
 
         } catch (SQLException e) {
-
+            System.out.println(e);
         }
         finally {
             try {
@@ -815,20 +893,27 @@ public class Solution {
         PreparedStatement pstmt = null;
         String returnValue= null;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW AthleteAndCountries" +
+            pstmt = connection.prepareStatement("DROP VIEW IF EXISTS WinningFromCountry");
+            pstmt.execute();
+            pstmt = connection.prepareStatement("DROP VIEW IF EXISTS AthleteAndCountries");
+            pstmt.execute();
+
+            pstmt = connection.prepareStatement("CREATE VIEW AthleteAndCountries " +
                     "AS SELECT Winning.Athlete_ID, Country " +
-                    "FROM Athlete, Winning" +
+                    "FROM Athlete, Winning " +
                     "WHERE Winning.Athlete_ID=Athlete.Athlete_ID");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("CREATE VIEW WinningFromCountry" +
-                    "SELECT country, COUNT (Athlete_ID) AS WinnersFrom" +
-                    "FROM AthleteAndCountries" +
-                    "GROUP BY Contry");
+            pstmt = connection.prepareStatement("CREATE VIEW WinningFromCountry " +
+                    "AS SELECT Country, COUNT (Athlete_ID) AS WinnersFrom " +
+                    "FROM AthleteAndCountries " +
+                    "GROUP BY Country");
             pstmt.execute();
 
             pstmt = connection.prepareStatement("SELECT Country, MAX(WinnersFrom)" +
-                    "ORDER BY Country");
+                    " FROM WinningFromCountry" +
+                    " GROUP BY Country" +
+                    " ORDER BY Country");
             pstmt.execute();
 
             ResultSet results = pstmt.executeQuery();
@@ -839,13 +924,15 @@ public class Solution {
 
             results.close();
 
-            pstmt = connection.prepareStatement("DROP VIEW AthleteAndCountries");
-            pstmt.execute();
             pstmt = connection.prepareStatement("DROP VIEW WinningFromCountry");
             pstmt.execute();
 
-        } catch (SQLException e) {
+            pstmt = connection.prepareStatement("DROP VIEW AthleteAndCountries");
+            pstmt.execute();
 
+
+        } catch (SQLException e) {
+            System.out.println(e);
         }
         finally {
             try {
@@ -868,14 +955,19 @@ public class Solution {
         PreparedStatement pstmt = null;
         String returnValue= null;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW SportsByCity" +
-                    "AS SELECT city SUM(AthletesCounter) As Athletes, COUNT (Sport_ID) As Sports" +
-                    "FROM Sport" +
+            pstmt = connection.prepareStatement("DROP VIEW IF EXISTS SportsByCity");
+            pstmt.execute();
+
+            pstmt = connection.prepareStatement("CREATE VIEW SportsByCity " +
+                    "AS SELECT city, SUM(Athletes_Counter) As Athletes, COUNT (Sport_ID) As Sports " +
+                    "FROM Sport " +
                     "GROUP BY City");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT City, MAX(Athletes/Sports)" +
-                    "ORDER BY City");
+            pstmt = connection.prepareStatement("SELECT City, MAX(Athletes/Sports) AS max " +
+                    "FROM SportsByCity" +
+                    " GROUP BY City " +
+                    "ORDER BY max DESC, City");
             pstmt.execute();
 
             ResultSet results = pstmt.executeQuery();
@@ -890,6 +982,7 @@ public class Solution {
             pstmt.execute();
 
         } catch (SQLException e) {
+            e.printStackTrace();
 
         }
         finally {
@@ -913,14 +1006,15 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW AthleteMedal" +
-                    "AS SELECT place" +
-                    "FROM Winning" +
+            pstmt = connection.prepareStatement("CREATE VIEW AthleteMedal " +
+                    "AS SELECT place " +
+                    "FROM Winning " +
                     "WHERE Athlete_ID=?");
             pstmt.setInt(1, athleteId);
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT place COUNT (place)" +
+            pstmt = connection.prepareStatement("SELECT place COUNT (place) " +
+                    "FROM AthleteMedal " +
                     "WHERE place=1");
             pstmt.execute();
 
@@ -931,7 +1025,8 @@ public class Solution {
                 array.add(0);
             results.close();
 
-            pstmt = connection.prepareStatement("SELECT place, COUNT (place)" +
+            pstmt = connection.prepareStatement("SELECT place, COUNT (place) " +
+                    "FROM AthleteMedal" +
                     "WHERE place=2");
             pstmt.execute();
 
@@ -942,7 +1037,8 @@ public class Solution {
                 array.add(0);
             results.close();
 
-            pstmt = connection.prepareStatement("SELECT place, COUNT (place)" +
+            pstmt = connection.prepareStatement("SELECT place, COUNT (place) " +
+                    "FROM AthleteMedal " +
                     "WHERE place=3");
             pstmt.execute();
 
@@ -981,27 +1077,27 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW AthleteMedal" +
-                    "AS SELECT Athlete_ID, COUNT (place)*3 As points" +
-                    "FROM Winning" +
-                    "GROUP BY Athlete_ID" +
-                    "WHERE place=1" +
-                    "UNION"+
+            pstmt = connection.prepareStatement("CREATE VIEW AthleteMedal " +
+                    "AS SELECT Athlete_ID, COUNT (place)*3 As points " +
+                    "FROM Winning " +
+                    "GROUP BY Athlete_ID " +
+                    "WHERE place=1 " +
+                    "UNION "+
                     "SELECT Athlete_ID, COUNT (place)*2 As points" +
-                    "FROM Winning" +
-                    "GROUP BY Athlete_ID" +
-                    "WHERE place=2"+
-                    "UNION"+
-                    "SELECT Athlete_ID, COUNT (place) As points" +
-                    "FROM Winning" +
-                    "GROUP BY Athlete_ID" +
+                    "FROM Winning " +
+                    "GROUP BY Athlete_ID " +
+                    "WHERE place=2 "+
+                    "UNION "+
+                    "SELECT Athlete_ID, COUNT (place) As points " +
+                    "FROM Winning " +
+                    "GROUP BY Athlete_ID " +
                     "WHERE place=3");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT AthleteID, SUM(points) AS allPoints" +
-                    "FROM AthleteMedal" +
-                    "GROUP BY AthleteID" +
-                    "ORDER BY allPoints, AthleteID ASC" +
+            pstmt = connection.prepareStatement("SELECT AthleteID, SUM(points) AS allPoints " +
+                    "FROM AthleteMedal " +
+                    "GROUP BY AthleteID " +
+                    "ORDER BY allPoints, AthleteID ASC " +
                     "LIMIT 10");
             pstmt.execute();
 
@@ -1039,25 +1135,25 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW AthleteSports" +
-                    "AS SELECT Sport_ID" +
-                    "FROM AthleteStatus" +
+            pstmt = connection.prepareStatement("CREATE VIEW AthleteSports " +
+                    "AS SELECT Sport_ID " +
+                    "FROM AthleteStatus " +
                     "WHERE Athlete_ID=?");
             pstmt.setInt(1, athleteId);
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("CREATE VIEW HisSport" +
-                    "AS SELECT Sport_ID, Athlete_ID, COUNT (Sport_ID) AS partial" +
-                    "FROM AthleteStatus" +
-                    "GROUP BY Athlete_ID" +
+            pstmt = connection.prepareStatement("CREATE VIEW HisSport " +
+                    "AS SELECT Sport_ID, Athlete_ID, COUNT (Sport_ID) AS partial " +
+                    "FROM AthleteStatus " +
+                    "GROUP BY Athlete_ID " +
                     "WHERE Sport_ID IN AthleteSports");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT Athlete_ID partial/MAX(partial) AS precent" +
-                    "FROM HisSport" +
-                    "WHERE Athlete_ID!=? AND precernt>0.5" +
-                    "ORDER BY Athlete_ID ASC" +
-                    "LINIT 10");
+            pstmt = connection.prepareStatement("SELECT Athlete_ID partial/MAX(partial) AS precent " +
+                    "FROM HisSport " +
+                    "WHERE Athlete_ID<>? AND precernt>0.5 " +
+                    "ORDER BY Athlete_ID ASC " +
+                    "LIMIT 10");
             pstmt.setInt(1, athleteId);
             pstmt.execute();
 
@@ -1068,9 +1164,9 @@ public class Solution {
                 array.add(results.getInt(1));
             results.close();
 
-            pstmt = connection.prepareStatement("DROP VIEW HisSport");
+            pstmt = connection.prepareStatement("DROP VIEW HisSport ");
             pstmt.execute();
-            pstmt = connection.prepareStatement("DROP VIEW AthleteSports");
+            pstmt = connection.prepareStatement("DROP VIEW AthleteSports ");
             pstmt.execute();
 
         } catch (SQLException e) {
@@ -1097,35 +1193,35 @@ public class Solution {
         Connection connection = DBConnector.getConnection();
         PreparedStatement pstmt = null;
         try {
-            pstmt = connection.prepareStatement("CREATE VIEW AthleteSports" +
-                    "AS SELECT Sport_ID" +
-                    "FROM AthleteStatus" +
+            pstmt = connection.prepareStatement("CREATE VIEW AthleteSports " +
+                    "AS SELECT Sport_ID " +
+                    "FROM AthleteStatus " +
                     "WHERE Athlete_ID=?");
             pstmt.setInt(1, athleteId);
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("CREATE VIEW HisSport" +
-                    "AS SELECT Sport_ID, Athlete_ID, COUNT (Sport_ID) AS partial" +
-                    "FROM AthleteStatus" +
-                    "GROUP BY Athlete_ID" +
+            pstmt = connection.prepareStatement("CREATE VIEW HisSport " +
+                    "AS SELECT Sport_ID, Athlete_ID, COUNT (Sport_ID) AS partial " +
+                    "FROM AthleteStatus " +
+                    "GROUP BY Athlete_ID " +
                     "WHERE Sport_ID IN AthleteSports");
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("CREATE VIEW Close" +
-                    "AS SELECT Athlete_ID partial/MAX(partial) AS precent" +
-                    "FROM HisSport" +
-                    "WHERE Athlete_ID!=? AND precernt>0.5" +
-                    "ORDER BY Athlete_ID ASC" +
-                    "LINIT 10");
+            pstmt = connection.prepareStatement("CREATE VIEW Close " +
+                    "AS SELECT Athlete_ID partial/MAX(partial) AS precent " +
+                    "FROM HisSport " +
+                    "WHERE Athlete_ID<>? AND precernt>0.5 " +
+                    "ORDER BY Athlete_ID ASC " +
+                    "LIMIT 10");
             pstmt.setInt(1, athleteId);
             pstmt.execute();
 
-            pstmt = connection.prepareStatement("SELECT Sport_ID, COUNT(Athelete_ID) AS counter" +
-                    "FROM AthleteStatus" +
-                    "GROUP BY Sport_ID" +
-                    "WHERE Sport_ID NOT IN AthleteSports AND Athelete_ID IN Close" +
-                    "ORDER BY counter, Sport_ID ASC" +
-                    "LINIT 3");
+            pstmt = connection.prepareStatement("SELECT Sport_ID, COUNT(Athelete_ID) AS counter " +
+                    "FROM AthleteStatus " +
+                    "GROUP BY Sport_ID " +
+                    "WHERE Sport_ID NOT IN AthleteSports AND Athelete_ID IN Close " +
+                    "ORDER BY counter, Sport_ID ASC " +
+                    "LIMIT 3");
             pstmt.execute();
 
             ResultSet results = pstmt.executeQuery();
